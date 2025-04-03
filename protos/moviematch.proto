@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+service MovieMatch {
+  rpc StreamState(stream StateMessage) returns (stream StateMessage);
+}
+
+message StateMessage {
+  string user = 1;
+  string data = 2;
+}
