@@ -1,12 +1,12 @@
 import 'dart:async';
-
 import 'package:grpc/grpc.dart';
-
 import 'generated/moviematch.pbgrpc.dart';
+
+// Ready made code: https://github.com/MatiasHiltunen/moviematch_server
 
 class MovieMatchService extends MovieMatchServiceBase {
   final Map<String, StreamController<StateMessage>> clients = {};
-  final Map<String, String> userValues = {};
+  final Map<String, List<String>> userValues = {};
 
   @override
   Stream<StateMessage> streamState(
@@ -18,18 +18,25 @@ class MovieMatchService extends MovieMatchServiceBase {
 
     request.listen(
       (msg) {
-        print("Server listen, ${msg.user}: ${msg.data}");
+        //print("Server listen, ${msg.user}: ${msg.data}");
 
         currentUser = msg.user;
         clients[msg.user] = controller;
-        userValues[msg.user] = msg.data;
+
+        if (userValues.containsKey(msg.user)) {
+          userValues[msg.user]?.add(msg.data);
+        } else {
+          userValues[msg.user] = [msg.data];
+        }
+
+        print("Current server in-memory db state: $userValues");
 
         for (var entry in userValues.entries) {
-          if (entry.key != msg.user && entry.value == msg.data) {
+          if (entry.key != msg.user && entry.value.contains(msg.data)) {
             final matchMessage =
                 StateMessage()
                   ..user = 'server'
-                  ..data = entry.value;
+                  ..data = msg.data;
 
             clients[entry.key]?.add(matchMessage);
             clients[msg.user]?.add(matchMessage);
